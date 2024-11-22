@@ -4,6 +4,8 @@ import yfinance as yf
 from sklearn.preprocessing import MinMaxScaler
 from keras.src.models import Sequential
 from keras.src.layers import LSTM, Dense
+import joblib
+
 
 def create_dataset(dataset, time_step=60):
     dataX, dataY = [], []
@@ -19,6 +21,8 @@ def train_lstm(symbol, start_date, end_date):
 
     scaler = MinMaxScaler(feature_range=(0, 1))
     scaled_data = scaler.fit_transform(data)
+
+    joblib.dump(scaler, 'scaler.pkl')
 
     train_size = int(len(scaled_data) * 0.8)
     train_data, test_data = scaled_data[:train_size], scaled_data[train_size:]
@@ -45,7 +49,7 @@ def train_lstm(symbol, start_date, end_date):
     y_test = scaler.inverse_transform(y_test.reshape(-1, 1))
     mse = np.mean(np.square(test_predictions - y_test))
 
-    model_path = f"saved_models/lstm_model_{symbol}.h5"
+    model_path = f"saved_models/stock_prediction_model.h5"
     model.save(model_path)
 
     return model_path, mse
