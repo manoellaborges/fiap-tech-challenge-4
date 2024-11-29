@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException
 import yfinance as yf
 import pandas as pd
-from models.lstm_model import train_lstm
+from core.lstm_model import train_lstm
 
 router = APIRouter()
 
 @router.post("/{symbol}")
-async def train_model(symbol: str = "AAPL", start_date: str = "2020-01-01", end_date: str = "2023-01-01"):
+async def train_model(symbol: str, start_date: str = "2020-01-01", end_date: str = "2023-01-01"):
     """
     Treina o modelo LSTM e salva o arquivo.
     """
