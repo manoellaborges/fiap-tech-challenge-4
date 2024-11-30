@@ -66,6 +66,11 @@ def build_model(hp):
     )
     return model
 
+results = {
+    "real_values": [],
+    "predicted_values": []
+}
+
 
 def train_lstm(symbol, start_date, end_date):
     data = extract_data(symbol, start_date, end_date)
@@ -82,6 +87,8 @@ def train_lstm(symbol, start_date, end_date):
     n_splits = calculate_n_splits(len(X), min_test_size=0.1)
     tscv = TimeSeriesSplit(n_splits=n_splits)
     mse_scores = []
+
+ 
 
     tuner = kt.RandomSearch(
         build_model,
@@ -106,6 +113,11 @@ def train_lstm(symbol, start_date, end_date):
         y_test_unscaled = scaler.inverse_transform(y_test.reshape(-1, 1))
         mse = mean_squared_error(y_test_unscaled, test_predictions)
         mse_scores.append(mse)
+
+        global results
+        results["real_values"].extend(y_test_unscaled.flatten())
+        results["predicted_values"].extend(test_predictions.flatten())
+        
 
     avg_mse = np.mean(mse_scores)
     print(avg_mse)
