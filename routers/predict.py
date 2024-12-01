@@ -1,31 +1,42 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 import numpy as np
-import yfinance as yf
 from tensorflow.keras.models import load_model
-from sklearn.preprocessing import MinMaxScaler
 import joblib
-from datetime import datetime, timedelta
+from utils.extract import fetch_historical_data
 
 
 router = APIRouter()
 
 class StockSymbol(BaseModel):
     symbol: str
+    custom_data: list = None
 
 model = load_model('stock_prediction_model.keras')
 scaler = joblib.load('scaler.pkl')
 
-def fetch_historical_data(symbol: str):
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=120)
-    data = yf.download(symbol, start=start_date, end=end_date, progress=False)
-    return data['Close'].values
 
 @router.post("/")
 def predict(data: StockSymbol):
     try:
-        historical_data = fetch_historical_data(data.symbol)
+        # Verificar se dados personalizados foram fornecidos
+        if data.custom_data:
+            historical_data = np.array(data.custom_data)
+
+            # Validação básica
+            if len(historical_data) < 60:
+                return {"error": "Insufficient data. At least 60 data points are required."}
+            if not all(isinstance(x, (int, float)) for x in historical_data):
+                return {"error": "All data points must be numbers."}
+
+            # Verificação de outliers (exemplo simples)
+            if np.any(historical_data > np.mean(historical_data) + 3 * np.std(historical_data)):
+                return {"warning": "Possible outliers detected. Please verify your data."}
+
+            # Dados aprovados para uso
+        else:
+            # Buscar dados históricos automaticamente
+            historical_data = fetch_historical_data(data.symbol)
 
         input_data = scaler.transform(historical_data[-60:].reshape(-1, 1)).reshape(1, 60, 1)
         prediction = model.predict(input_data)

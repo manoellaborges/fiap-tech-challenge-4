@@ -1,5 +1,11 @@
-import pandas as pd
 import numpy as np
+
+
+def add_technical_indicators(data):
+    data['SMA_20'] = data['Close'].rolling(window=20).mean()
+    data['SMA_50'] = data['Close'].rolling(window=50).mean()
+    data.dropna(inplace=True)
+    return data
 
 
 def preprocess_data(data, symbol):
@@ -11,8 +17,10 @@ def preprocess_data(data, symbol):
     Returns:
     pd.DataFrame: The preprocessed data with outliers handled and NaN values forward-filled.
     """
-    # data = pd.DataFrame(data)
     data.dropna(inplace=True)
+
+    # 
+    data = add_technical_indicators(data)
 
     deviations = 3
     mean = data[('Close', symbol)].mean()
